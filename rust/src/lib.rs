@@ -24,11 +24,17 @@ pub struct DeployOutput<ProviderOutput> {
 pub trait XnodeDeployer: Send + Sync {
     type ProviderOutput;
 
-    /// Decide who should be the current controller based on external data
+    /// Provision new hardware with XnodeOS
     fn deploy(
         &self,
         input: DeployInput,
     ) -> impl Future<Output = Result<DeployOutput<Self::ProviderOutput>, Error>> + Send;
+
+    /// Cancel renting of hardware
+    fn undeploy(
+        &self,
+        xnode: DeployOutput<Self::ProviderOutput>,
+    ) -> impl Future<Output = Option<Error>> + Send;
 }
 
 impl DeployInput {

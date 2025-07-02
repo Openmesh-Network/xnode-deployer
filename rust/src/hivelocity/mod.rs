@@ -55,22 +55,6 @@ impl HivelocityDeployer {
             hardware,
         }
     }
-
-    pub async fn undeploy(&self, input: HivelocityUndeployInput) -> Option<Error> {
-        let scope = match input {
-            HivelocityUndeployInput::BareMetal { device_id } => {
-                format!("bare-metal-devices/{device_id}")
-            }
-            HivelocityUndeployInput::Compute { device_id } => format!("compute/{device_id}"),
-        };
-        self.client
-            .delete(format!("https://core.hivelocity.net/api/v2/{scope}"))
-            .header("X-API-KEY", self.api_key.clone())
-            .send()
-            .await
-            .err()
-            .map(Error::ReqwestError)
-    }
 }
 
 impl XnodeDeployer for HivelocityDeployer {
@@ -81,7 +65,7 @@ impl XnodeDeployer for HivelocityDeployer {
         input: DeployInput,
     ) -> Result<DeployOutput<Self::ProviderOutput>, Error> {
         log::info!(
-            "Deploying Xnode with configuration {input:?} on {hardware:?}",
+            "Hivelocity deployment of {input:?} on {hardware:?} started",
             hardware = self.hardware
         );
         let mut response = match &self.hardware {
@@ -125,6 +109,7 @@ impl XnodeDeployer for HivelocityDeployer {
         .header("X-API-KEY", self.api_key.clone())
         .send()
         .await
+        .and_then(|response| response.error_for_status())
         .map_err(Error::ReqwestError)?
         .json::<serde_json::Value>()
         .await
@@ -196,6 +181,30 @@ impl XnodeDeployer for HivelocityDeployer {
         };
         log::info!("Hivelocity deployment succeeded: {output:?}");
         Ok(output)
+    }
+
+    async fn undeploy(&self, xnode: DeployOutput<Self::ProviderOutput>) -> Option<Error> {
+        let device_id = xnode.provider.device_id;
+        log::info!("Undeploying hivelocity device {device_id} started",);
+        let scope = match self.hardware {
+            HivelocityHardware::BareMetal { .. } => "bare-metal-devices",
+            HivelocityHardware::Compute { .. } => "compute",
+        };
+        if let Err(e) = self
+            .client
+            .delete(format!(
+                "https://core.hivelocity.net/api/v2/{scope}/{device_id}"
+            ))
+            .header("X-API-KEY", self.api_key.clone())
+            .send()
+            .await
+            .and_then(|response| response.error_for_status())
+        {
+            return Some(Error::ReqwestError(e));
+        }
+
+        log::info!("Undeploying hivelocity device {device_id} succeeded");
+        None
     }
 }
 
