@@ -55,6 +55,22 @@ impl HivelocityDeployer {
             hardware,
         }
     }
+
+    pub async fn undeploy(&self, input: HivelocityUndeployInput) -> Option<Error> {
+        let scope = match input {
+            HivelocityUndeployInput::BareMetal { device_id } => {
+                format!("bare-metal-devices/{device_id}")
+            }
+            HivelocityUndeployInput::Compute { device_id } => format!("compute/{device_id}"),
+        };
+        self.client
+            .delete(format!("https://core.hivelocity.net/api/v2/{scope}"))
+            .header("X-API-KEY", self.api_key.clone())
+            .send()
+            .await
+            .err()
+            .map(Error::ReqwestError)
+    }
 }
 
 impl XnodeDeployer for HivelocityDeployer {
@@ -206,4 +222,10 @@ pub enum HivelocityHardware {
         product_id: u64,
         hostname: String,
     },
+}
+
+#[derive(Debug)]
+pub enum HivelocityUndeployInput {
+    BareMetal { device_id: u64 },
+    Compute { device_id: u64 },
 }
