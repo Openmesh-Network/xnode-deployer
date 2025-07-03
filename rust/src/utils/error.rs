@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use crate::HivelocityError;
+#[cfg(feature = "hivelocity")]
+use crate::hivelocity::HivelocityError;
 
 #[derive(Debug)]
 pub enum Error {
@@ -21,6 +22,8 @@ impl Display for XnodeDeployerError {
 
 #[derive(Debug)]
 pub enum XnodeDeployerErrorInner {
+    Default,
+    #[cfg(feature = "hivelocity")]
     HivelocityError(HivelocityError),
 }
 
@@ -28,6 +31,8 @@ impl Display for XnodeDeployerErrorInner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(
             match self {
+                XnodeDeployerErrorInner::Default => "".to_string(),
+                #[cfg(feature = "hivelocity")]
                 XnodeDeployerErrorInner::HivelocityError(e) => e.to_string(),
             }
             .as_str(),

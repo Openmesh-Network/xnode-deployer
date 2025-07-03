@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-mod hivelocity;
 mod utils;
-
-pub use hivelocity::*;
 pub use utils::{Error, XnodeDeployerError};
+
+#[cfg(feature = "hivelocity")]
+pub mod hivelocity;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeployInput {
