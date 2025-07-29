@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 use serde::{Deserialize, Serialize};
 
 mod utils;
@@ -15,10 +17,10 @@ pub struct DeployInput {
     pub encrypted: Option<String>,
     pub initial_config: Option<String>,
 }
-#[derive(Serialize, Deserialize, Debug)]
-pub struct DeployOutput<ProviderOutput> {
-    pub ip: String,
-    pub provider: ProviderOutput,
+
+pub enum OptionalSupport<T> {
+    NotSupported,
+    Supported(T),
 }
 
 pub trait XnodeDeployer: Send + Sync {
@@ -28,13 +30,16 @@ pub trait XnodeDeployer: Send + Sync {
     fn deploy(
         &self,
         input: DeployInput,
-    ) -> impl Future<Output = Result<DeployOutput<Self::ProviderOutput>, Error>> + Send;
+    ) -> impl Future<Output = Result<Self::ProviderOutput, Error>> + Send;
 
     /// Cancel renting of hardware
-    fn undeploy(
+    fn undeploy(&self, xnode: Self::ProviderOutput) -> impl Future<Output = Option<Error>> + Send;
+
+    /// Get ipv4 address of deployed hardware
+    fn ipv4(
         &self,
-        xnode: DeployOutput<Self::ProviderOutput>,
-    ) -> impl Future<Output = Option<Error>> + Send;
+        xnode: Self::ProviderOutput,
+    ) -> impl Future<Output = Result<OptionalSupport<Option<Ipv4Addr>>, Error>> + Send;
 }
 
 impl DeployInput {

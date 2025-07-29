@@ -1,11 +1,12 @@
-use std::{fmt::Display, time::Duration};
+use std::{fmt::Display, net::Ipv4Addr, str::FromStr};
 
 use reqwest::Client;
 use serde_json::json;
-use tokio::time::sleep;
 
 use crate::{
-    DeployInput, DeployOutput, Error, XnodeDeployer, XnodeDeployerError,
+    DeployInput, Error,
+    OptionalSupport::{self, Supported},
+    XnodeDeployer, XnodeDeployerError,
     utils::XnodeDeployerErrorInner,
 };
 
@@ -60,15 +61,12 @@ impl HivelocityDeployer {
 impl XnodeDeployer for HivelocityDeployer {
     type ProviderOutput = HivelocityOutput;
 
-    async fn deploy(
-        &self,
-        input: DeployInput,
-    ) -> Result<DeployOutput<Self::ProviderOutput>, Error> {
+    async fn deploy(&self, input: DeployInput) -> Result<Self::ProviderOutput, Error> {
         log::info!(
             "Hivelocity deployment of {input:?} on {hardware:?} started",
             hardware = self.hardware
         );
-        let mut response = match &self.hardware {
+        let response = match &self.hardware {
             HivelocityHardware::BareMetal {
                 location_name,
                 period,
@@ -147,45 +145,14 @@ impl XnodeDeployer for HivelocityDeployer {
             Err(e) => return Err(e),
         };
 
-        let mut ip = "0.0.0.0".to_string();
-        while ip == "0.0.0.0" {
-            log::info!("Getting ip address of hivelocity device {device_id}",);
-            if let serde_json::Value::Object(map) = &response {
-                if let Some(serde_json::Value::String(primary_ip)) = map.get("primaryIp") {
-                    ip = primary_ip.clone();
-                }
-            };
-
-            sleep(Duration::from_secs(1)).await;
-            let scope = match self.hardware {
-                HivelocityHardware::BareMetal { .. } => "bare-metal-devices",
-                HivelocityHardware::Compute { .. } => "compute",
-            };
-            response = self
-                .client
-                .get(format!(
-                    "https://core.hivelocity.net/api/v2/{scope}/{device_id}"
-                ))
-                .header("X-API-KEY", self.api_key.clone())
-                .send()
-                .await
-                .map_err(Error::ReqwestError)?
-                .json::<serde_json::Value>()
-                .await
-                .map_err(Error::ReqwestError)?;
-        }
-
-        let output = DeployOutput::<Self::ProviderOutput> {
-            ip,
-            provider: HivelocityOutput { device_id },
-        };
+        let output = Self::ProviderOutput { device_id };
         log::info!("Hivelocity deployment succeeded: {output:?}");
         Ok(output)
     }
 
-    async fn undeploy(&self, xnode: DeployOutput<Self::ProviderOutput>) -> Option<Error> {
-        let device_id = xnode.provider.device_id;
-        log::info!("Undeploying hivelocity device {device_id} started",);
+    async fn undeploy(&self, xnode: Self::ProviderOutput) -> Option<Error> {
+        let device_id = xnode.device_id;
+        log::info!("Undeploying hivelocity device {device_id} started");
         let scope = match self.hardware {
             HivelocityHardware::BareMetal { .. } => "bare-metal-devices",
             HivelocityHardware::Compute { .. } => "compute",
@@ -205,6 +172,40 @@ impl XnodeDeployer for HivelocityDeployer {
 
         log::info!("Undeploying hivelocity device {device_id} succeeded");
         None
+    }
+
+    async fn ipv4(
+        &self,
+        xnode: Self::ProviderOutput,
+    ) -> Result<OptionalSupport<Option<Ipv4Addr>>, Error> {
+        let device_id = xnode.device_id;
+        let scope = match self.hardware {
+            HivelocityHardware::BareMetal { .. } => "bare-metal-devices",
+            HivelocityHardware::Compute { .. } => "compute",
+        };
+        let response = self
+            .client
+            .get(format!(
+                "https://core.hivelocity.net/api/v2/{scope}/{device_id}"
+            ))
+            .header("X-API-KEY", self.api_key.clone())
+            .send()
+            .await
+            .and_then(|response| response.error_for_status())
+            .map_err(Error::ReqwestError)?
+            .json::<serde_json::Value>()
+            .await
+            .map_err(Error::ReqwestError)?;
+
+        if let serde_json::Value::Object(map) = &response {
+            if let Some(serde_json::Value::String(primary_ip)) = map.get("primaryIp") {
+                if let Ok(ip) = Ipv4Addr::from_str(primary_ip) {
+                    return Ok(Supported(Some(ip)));
+                }
+            }
+        };
+
+        Ok(Supported(None))
     }
 }
 
