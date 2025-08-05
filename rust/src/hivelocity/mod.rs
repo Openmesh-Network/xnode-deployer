@@ -176,7 +176,7 @@ impl XnodeDeployer for HivelocityDeployer {
 
     async fn ipv4(
         &self,
-        xnode: Self::ProviderOutput,
+        xnode: &Self::ProviderOutput,
     ) -> Result<OptionalSupport<Option<Ipv4Addr>>, Error> {
         let device_id = xnode.device_id;
         let scope = match self.hardware {
@@ -209,7 +209,7 @@ impl XnodeDeployer for HivelocityDeployer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HivelocityOutput {
     pub device_id: u64,
 }

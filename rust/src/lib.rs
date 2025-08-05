@@ -7,6 +7,8 @@ pub use utils::{Error, XnodeDeployerError};
 
 #[cfg(feature = "hivelocity")]
 pub mod hivelocity;
+#[cfg(feature = "hyperstack")]
+pub mod hyperstack;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeployInput {
@@ -18,6 +20,7 @@ pub struct DeployInput {
     pub initial_config: Option<String>,
 }
 
+#[derive(Debug)]
 pub enum OptionalSupport<T> {
     NotSupported,
     Supported(T),
@@ -38,7 +41,7 @@ pub trait XnodeDeployer: Send + Sync {
     /// Get ipv4 address of deployed hardware
     fn ipv4(
         &self,
-        xnode: Self::ProviderOutput,
+        xnode: &Self::ProviderOutput,
     ) -> impl Future<Output = Result<OptionalSupport<Option<Ipv4Addr>>, Error>> + Send;
 }
 

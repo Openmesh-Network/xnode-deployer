@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 #[cfg(feature = "hivelocity")]
 use crate::hivelocity::HivelocityError;
+#[cfg(feature = "hyperstack")]
+use crate::hyperstack::HyperstackError;
 
 #[derive(Debug)]
 pub enum Error {
@@ -25,6 +27,8 @@ pub enum XnodeDeployerErrorInner {
     Default,
     #[cfg(feature = "hivelocity")]
     HivelocityError(HivelocityError),
+    #[cfg(feature = "hyperstack")]
+    HyperstackError(HyperstackError),
 }
 
 impl Display for XnodeDeployerErrorInner {
@@ -34,6 +38,8 @@ impl Display for XnodeDeployerErrorInner {
                 XnodeDeployerErrorInner::Default => "".to_string(),
                 #[cfg(feature = "hivelocity")]
                 XnodeDeployerErrorInner::HivelocityError(e) => e.to_string(),
+                #[cfg(feature = "hyperstack")]
+                XnodeDeployerErrorInner::HyperstackError(e) => e.to_string(),
             }
             .as_str(),
         )
