@@ -1,6 +1,7 @@
 use std::{fmt::Display, net::Ipv4Addr, str::FromStr};
 
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::{
@@ -42,6 +43,7 @@ impl Display for HivelocityError {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct HivelocityDeployer {
     client: Client,
     api_key: String,
@@ -209,12 +211,12 @@ impl XnodeDeployer for HivelocityDeployer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct HivelocityOutput {
     pub device_id: u64,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum HivelocityHardware {
     // https://developers.hivelocity.net/reference/post_bare_metal_device_resource
     BareMetal {
@@ -234,7 +236,7 @@ pub enum HivelocityHardware {
     },
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum HivelocityUndeployInput {
     BareMetal { device_id: u64 },
     Compute { device_id: u64 },

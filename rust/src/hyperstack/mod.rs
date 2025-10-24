@@ -1,6 +1,7 @@
 use std::{fmt::Display, net::Ipv4Addr, str::FromStr};
 
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::{
@@ -44,7 +45,7 @@ impl Display for HyperstackError {
                     format!("Hyperstack response invalid instances: {instances:?}")
                 }
                 HyperstackError::ResponseEmptyInstances {} => {
-                    format!("Hyperstack response empty instances")
+                    "Hyperstack response empty instances".to_string()
                 }
                 HyperstackError::ResponseMissingId { map } => {
                     format!("Hyperstack response missing id: {map:?}")
@@ -58,6 +59,7 @@ impl Display for HyperstackError {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct HyperstackDeployer {
     client: Client,
     api_key: String,
@@ -251,12 +253,12 @@ impl XnodeDeployer for HyperstackDeployer {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct HyperstackOutput {
     pub id: u64,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum HyperstackHardware {
     // https://docs.hyperstack.cloud/docs/api-reference/core-resources/virtual-machines/vm-core/create-vms
     VirtualMachine {
@@ -267,7 +269,7 @@ pub enum HyperstackHardware {
     },
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum HyperstackUndeployInput {
     VirtualMachine { id: u64 },
 }

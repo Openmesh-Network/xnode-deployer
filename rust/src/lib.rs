@@ -10,7 +10,7 @@ pub mod hivelocity;
 #[cfg(feature = "hyperstack")]
 pub mod hyperstack;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct DeployInput {
     pub xnode_owner: Option<String>,
     pub domain: Option<String>,
@@ -20,7 +20,7 @@ pub struct DeployInput {
     pub initial_config: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum OptionalSupport<T> {
     NotSupported,
     Supported(T),
