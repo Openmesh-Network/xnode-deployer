@@ -200,11 +200,10 @@ impl XnodeDeployer for HyperstackDeployer {
         Ok(output)
     }
 
-    async fn undeploy(&self, xnode: Self::ProviderOutput) -> Option<Error> {
+    async fn undeploy(&self, xnode: Self::ProviderOutput) -> Result<(), Error> {
         let id = xnode.id;
         log::info!("Undeploying hyperstack device {id} started");
-        if let Err(e) = self
-            .client
+        self.client
             .delete(format!(
                 "https://infrahub-api.nexgencloud.com/v1/core/virtual-machines/{id}"
             ))
@@ -212,12 +211,10 @@ impl XnodeDeployer for HyperstackDeployer {
             .send()
             .await
             .and_then(|response| response.error_for_status())
-        {
-            return Some(Error::ReqwestError(e));
-        }
+            .map_err(Error::ReqwestError)?;
 
         log::info!("Undeploying hyperstack device {id} succeeded");
-        None
+        Ok(())
     }
 
     async fn ipv4(

@@ -36,7 +36,10 @@ pub trait XnodeDeployer: Send + Sync {
     ) -> impl Future<Output = Result<Self::ProviderOutput, Error>> + Send;
 
     /// Cancel renting of hardware
-    fn undeploy(&self, xnode: Self::ProviderOutput) -> impl Future<Output = Option<Error>> + Send;
+    fn undeploy(
+        &self,
+        xnode: Self::ProviderOutput,
+    ) -> impl Future<Output = Result<(), Error>> + Send;
 
     /// Get ipv4 address of deployed hardware
     fn ipv4(

@@ -152,15 +152,14 @@ impl XnodeDeployer for HivelocityDeployer {
         Ok(output)
     }
 
-    async fn undeploy(&self, xnode: Self::ProviderOutput) -> Option<Error> {
+    async fn undeploy(&self, xnode: Self::ProviderOutput) -> Result<(), Error> {
         let device_id = xnode.device_id;
         log::info!("Undeploying hivelocity device {device_id} started");
         let scope = match self.hardware {
             HivelocityHardware::BareMetal { .. } => "bare-metal-devices",
             HivelocityHardware::Compute { .. } => "compute",
         };
-        if let Err(e) = self
-            .client
+        self.client
             .delete(format!(
                 "https://core.hivelocity.net/api/v2/{scope}/{device_id}"
             ))
@@ -168,12 +167,10 @@ impl XnodeDeployer for HivelocityDeployer {
             .send()
             .await
             .and_then(|response| response.error_for_status())
-        {
-            return Some(Error::ReqwestError(e));
-        }
+            .map_err(Error::ReqwestError)?;
 
         log::info!("Undeploying hivelocity device {device_id} succeeded");
-        None
+        Ok(())
     }
 
     async fn ipv4(
