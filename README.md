@@ -1,11 +1,11 @@
 # Xnode Deployer
 
-Deploy new Xnodes on several hardware providers.
+Deploy XnodeOS on several hardware providers.
 
 ## Related Repos
 
-https://github.com/Openmesh-Network/xnode-manager
+https://github.com/Openmesh-Network/xnodeos
 
 ## Versioning
 
-Follows the xnode-manager Major and Minor version, Patch version is independent.
+Follows the XnodeOS Major and Minor version, Patch version is independent.

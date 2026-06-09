@@ -52,6 +52,7 @@ impl DeployInput {
     pub fn cloud_init(&self) -> String {
         let mut env = vec![];
         for (name, content) in [
+            ("VERSION", &Some("v1.0.0".to_string())),
             ("XNODE_OWNER", &self.xnode_owner),
             ("DOMAIN", &self.domain),
             ("ACME_EMAIL", &self.acme_email),
@@ -66,7 +67,7 @@ impl DeployInput {
 
         let env = env.join("");
         format!(
-            "#cloud-config\nruncmd:\n - |\n   {env} curl https://raw.githubusercontent.com/Openmesh-Network/xnode-manager/main/os/install.sh | bash 2>&1 | tee /tmp/xnodeos.log"
+            "#cloud-config\nruncmd:\n - |\n   {env} curl https://raw.githubusercontent.com/Openmesh-Network/xnodeos/main/install.sh | bash 2>&1 | tee /tmp/xnodeos.log"
         )
     }
 }
